@@ -6,175 +6,7 @@ Created on Thu Apr 30 07:43:44 2020
 @author: silasjimmy
 """
 
-import random
-
-class Card:
-    '''
-    Defines a card.
-    '''
-    def __init__(self, suit, value):
-        self.suit = suit
-        self.value = value
-        
-    def __str__(self):
-        return " of ".join((self.value, self.suit))
-    
-class DiscardPile:
-    '''
-    Defines a discard pile.
-    '''
-    def __init__(self, other_cards=None):
-        if other_cards:
-            self.cards = other_cards
-        else:
-            self.cards = []
-        
-    def get_cards(self):
-        '''
-        Gets the pile's cards
-        Returns (list of Card objects) the pile's cards.
-        '''
-        return self.cards
-    
-    def get_top_card(self):
-        '''
-        Returns (Card object) the top card in the pile.
-        '''
-        return self.cards[-1]
-        
-    def add_card(self, card):
-        '''
-        Adds a card to the pile.
-        card (Card object): The card to add to the pile.
-        '''
-        self.cards.append(card)
-        
-    def draw_card(self):
-        '''
-        Removes a card from the top of the pile.
-        Returns (Card object) a card.
-        '''
-        if len(self.cards) > 1:
-            return self.cards.pop(-1)
-        
-    def shuffle(self):
-        '''
-        Shuffles the pile.
-        '''
-        if len(self.cards) > 1:
-            random.shuffle(self.cards)
-            
-    def is_empty(self):
-        '''
-        Checks if the pile has less than 2 cards to declare empty.
-        Returns True if it is, False otherwise.
-        '''
-        if len(self.cards) < 2:
-            return True
-        return False
-            
-class DrawPile(DiscardPile):
-    '''
-    Defines a draw pile
-    '''
-    def __init__(self, other_cards=None):
-        super().__init__()
-        if other_cards:
-            self.cards = other_cards
-        else:
-            self.cards = [Card(s, v) for s in ["Spades", "Clubs", "Hearts", "Diamonds"] 
-                                    for v in ["A", "2", "3", "4", "5", "6", "7", "8", 
-                                    "9", "10", "J", "Q", "K"]]
-            
-    def deal_player_cards(self):
-        '''
-        Deals the players with 4 cards.
-        Returns (list of Cards) cards dealt.
-        '''
-        return [self.cards.pop(i) for i in range(4)]
-        
-class Hand:
-    '''
-    Defines a hand
-    '''
-    def __init__(self, cards):
-        self.cards = cards
-        self.value = 0
-        
-    def get_num_of_cards(self):
-        '''
-        Returns (int) the number of cards in the hand.
-        '''
-        return len(self.cards)
-    
-    def get_card(self, position):
-        '''
-        Returns (Card object) the card at the specified position.
-        '''
-        return self.cards[position]
-    
-    def add_card(self, card):
-        '''
-        Adds a card to the hand.
-        card (Card object): The card to add.
-        '''
-        self.cards.append(card)
-        
-    def drop_card(self, num):
-        '''
-        Removes a card at the position specified with num.
-        num (int): The position of the card to remove.
-        Returns (Card object) the card removed.
-        '''
-        dropped_card = self.cards.pop(num)
-        return dropped_card
-    
-    def get_hand_value(self):
-        '''
-        Returns (int) the value of the hand.
-        '''
-        self.calculate_hand_value()
-        return self.value
-        
-    def calculate_hand_value(self):
-        '''
-        Calculates the value of the hand.
-        '''
-        self.value = 0
-        for card in self.cards:
-            if card.value.isnumeric():
-                if int(card.value) == 8:
-                    self.value += 50
-                else:
-                    self.value += int(card.value)
-            else:
-                self.value += 10
-    
-    def display_hand(self):
-        '''
-        Displays the hand.
-        '''
-        for i, card in enumerate(self.cards):
-            print("({}) -> {}".format(i, card))
-            
-    def hand_over(self):
-        '''
-        Checks if the hand is over or not.
-        Returns True if it is, False otherwise.
-        '''
-        card_values = [card.value for card in self.cards]
-        card_values = set(card_values)
-        has_ak47 = False
-        if len(card_values) == 4:
-            for card_value in card_values:
-                if card_value in ["A", "K", "4", "7"]:
-                    has_ak47 = True
-                else:
-                    has_ak47 = False
-                    break
-            if has_ak47:
-                return True
-        return False
+from AK47 import DiscardPile, DrawPile, Hand, Computer
     
 class Game:
     def __init__(self):
@@ -182,6 +14,7 @@ class Game:
         print("######## AK47 ########")
         print("######################")
         print("\nWelcome to the card game AK47!")
+        print("\n*** The goal is to get cards with values A, K, 4 and 7. The first player to get the cards wins the hand. ***")
         print("\nStart the game!")
         print("\n######################")
         
@@ -197,27 +30,81 @@ class Game:
         
         # Deal each player 7 cards and create their hands
         player_cards = draw_pile.deal_player_cards()
-        player = Hand(player_cards)
+        computer_cards = draw_pile.deal_player_cards()
         
-        while not player.hand_over():
+        # Create players' hands
+        player = Hand(player_cards)
+        computer = Computer(computer_cards)
+        
+        # Game variables
+        self.winner = None
+        self.winner_points = 0
+        
+        while not player.hand_over() and not computer.hand_over():
+            # First check if the draw pile is empty
+            if draw_pile.is_empty():
+                # Get the remaining cards from the discard and draw piles and add them together
+                discard_pile_cards = discard_pile.get_cards()
+                draw_pile_cards = draw_pile.get_cards()
+                all_cards = discard_pile_cards + draw_pile_cards
+                
+                # Create a new draw pile with the remaining cards from discard and draw pile
+                draw_pile = DrawPile(other_cards=all_cards)
+                draw_pile.shuffle()
+                
+                # Create a new discard pile
+                discard_pile = DiscardPile()
+                
+            # Display computer cards
+            print("\n*** Computer's cards are hidden. ***")
             # Display the player's hand
             print("\n#### Your cards ####")
             player.display_hand()
             
+            #### Player's turn ####
             # Drop a card of your choice
             num = self.prompt_card_num(player)
             # Get the card dropped
             dropped = player.drop_card(num)
-            
             # Add the card to the discard pile
             discard_pile.add_card(dropped)
             print("\n>>> You  dropped", dropped)
-    
             # Draw a card from the draw pile and add to the hand
             draw = draw_pile.draw_card()
             player.add_card(draw)
             print("\n>>> You drew", draw)
-            # Do that until you get AK47
+            
+            if player.hand_over():
+                self.winner = "player"
+                break
+            
+            #### Computer's turn ####
+            dropped = computer.play()
+            # Add the card to the discard pile
+            discard_pile.add_card(dropped)
+            # Draw a card from the draw pile and add to the hand
+            draw = draw_pile.draw_card()
+            computer.add_card(draw)
+            print("\n*** Computer  dropped", dropped, "and drew a card ***")
+            
+            if player.hand_over():
+                self.winner = "computer"
+                break
+            
+        print("\n######################")
+        print("#### Hand over! ######")
+        print("######################")
+              
+        # Print opponent's hand
+        print("\nOpponent's cards:")
+        if self.winner == "player":
+            computer.display_hand()
+            self.winner_points = computer.get_hand_value()
+        else:
+            player.display_hand()
+            self.winner_points = player.get_hand_value()
+            
+        print("\n The", self.winner, "wins the hand with", self.winner_points, "points!")
         
     def prompt_card_num(self, hand):
         '''
@@ -229,5 +116,17 @@ class Game:
         while not num.isdigit() or num not in valid_card_numbers:
             num = input("Please enter a valid card number: ")
         return int(num)
-        
-game = Game()
+
+if __name__ == "__main__":        
+    game = Game()
+
+#comp = Computer([Card("Spades", "A"), Card("Diamonds", "K"), Card("Clubs", "4"), Card("Hearts", "7")])
+#comp.display_hand()
+#c = comp.get_hand_value()
+#print(c)
+
+
+
+
+
+
