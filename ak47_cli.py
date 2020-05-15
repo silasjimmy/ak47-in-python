@@ -39,6 +39,7 @@ class Game:
         # Game variables
         self.winner = None
         self.winner_points = 0
+        self.top_card = None
         
         while not player.hand_over() and not computer.hand_over():
             # First check if the draw pile is empty
@@ -56,7 +57,9 @@ class Game:
                 discard_pile = DiscardPile()
                 
             # Display computer cards
-            print("\n*** Computer's cards are hidden. ***")
+#            print("\n*** Computer's cards are hidden. ***")
+            print("\nComputer's cards:")
+            computer.display_hand()
             # Display the player's hand
             print("\n#### Your cards ####")
             player.display_hand()
@@ -91,9 +94,9 @@ class Game:
                 self.winner = "computer"
                 break
             
-        print("\n######################")
-        print("#### Hand over! ######")
-        print("######################")
+        print("\n#####################")
+        print("#### Hand over! #####")
+        print("#####################")
               
         # Print opponent's hand
         print("\nOpponent's cards:")
@@ -104,7 +107,7 @@ class Game:
             player.display_hand()
             self.winner_points = player.get_hand_value()
             
-        print("\n The", self.winner, "wins the hand with", self.winner_points, "points!")
+        print("\nThe", self.winner, "wins the hand with", self.winner_points, "points!")
         
     def prompt_card_num(self, hand):
         '''
